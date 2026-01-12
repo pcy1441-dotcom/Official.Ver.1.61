@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PINEAPPLE MYSTERY - FINAL</title>
+<style>
+:root {
+  --bg:#050505; --accent:#f4d03f; --red:#cc0000; --blue:#2b57ff; --green:#28a745;
+  --kiwi:#00ff00; --bberry:#4facfe;
+}
+body { font-family:'Courier New', monospace; background:var(--bg); color:#e0e0e0; margin:0; text-align:center; transition:.8s; height:100vh; overflow:hidden; }
+
+body.kiwi-mode { --accent:var(--kiwi); color:var(--kiwi); }
+body.blueberry-mode { --accent:var(--bberry); color:#fff; }
+
+.ticker-wrap { width:100%; background:var(--accent); color:#000; padding:5px 0; font-weight:900; position:fixed; z-index:100; }
+.t-bottom { bottom:0; top:auto; }
+.t-top { top:0; }
+
+.wrapper { height:100vh; display:flex; justify-content:center; align-items:center; }
+.card { background:rgba(15,15,15,.95); padding:30px; border-radius:20px; border:1px solid #333; max-width:380px; width:100%; display:none; }
+
+.btn { background:#111; color:#fff; border:1px solid #333; padding:15px; border-radius:8px; cursor:pointer; width:100%; margin-top:10px; font-weight:bold; }
+
+#role { font-size:45px; font-weight:900; }
+#skill { font-size:24px; font-weight:bold; margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<div class="ticker-wrap t-top"><div id="tickTop">PINEAPPLE SYSTEM ONLINE 0217 🍍</div></div>
+
+<div id="h-screen" style="display:none;position:fixed;width:100%;height:100%;background:#000;z-index:200;display:flex;flex-direction:column;justify-content:center;align-items:center;">
+  <div id="loadingText" style="color:#fff;font-weight:bold;">INITIALIZING SYSTEM…</div>
+</div>
+
+<div class="wrapper">
+  <div id="menu" class="card" style="display:block;">
+    <h1 id="title" style="color:var(--accent);letter-spacing:4px;">PINEAPPLE</h1>
+    <input type="number" id="pCount" min="4" max="20" value="6">
+    <button onclick="bootSystem()" class="btn">START</button>
+    <div id="debug-panel" style="display:none;">
+      <select id="forceType">
+        <option value="none">RANDOM</option>
+        <option>Standard</option>
+        <option>Chillsear</option>
+        <option>Zombie</option>
+        <option>Eden</option>
+      </select>
+    </div>
+    <span onclick="openAdmin()" style="font-size:10px;cursor:pointer;">[ADMIN]</span>
+  </div>
+
+  <div id="draw" class="card">
+    <div id="pNum">PLAYER 1</div>
+    <button onclick="reveal()" class="btn">ACCESS ROLE</button>
+  </div>
+
+  <div id="result" class="card" style="background:#fff;color:#000;">
+    <div id="role"></div>
+    <div id="skill"></div>
+    <div id="desc"></div>
+    <button onclick="next()" class="btn">CONFIRM</button>
+  </div>
+</div>
+
+<div class="ticker-wrap t-bottom"><div id="tickBottom">PINEAPPLE CORP 🍍 0217 🍍</div></div>
+
+<script>
+const skills = {
+  머더:[
+    {n:"방탄",d:"한 번 공격을 버팁니다."},
+    {n:"가방",d:"죽인 대상이 마지막에 사망합니다."},
+    {n:"총잡이",d:"보안관 방식으로 처치합니다."}
+  ],
+  보안관:[{n:"강인한",d:"목숨 2개."}],
+  의사:[{n:"자가치유",d:"자신 치료 1회."}],
+  시민:[
+    {n:"스파이",d:"생존자를 죽일시 목숨이 최대 2개가 되지만 머더를 죽이면 자신과 머더는 즉사하는 대신, 시민이 승리합니다."},
+    {n:"패링",d:"한 번 공격 방어."},
+    {n:"퍼블win",d:"먼저 죽으면 시민 승리."}
+  ]
+};
+
+let roles=[], skillsPick=[], cur=0, mode="normal";
+
+function openAdmin(){
+  const pw=prompt("CODE:");
+  if(pw==="9245"){
+    mode="kiwi";
+    document.body.className="kiwi-mode";
+    document.getElementById("title").innerText="KIWI_HACK";
+    document.getElementById("tickTop").innerText="KIWI SYSTEM ONLINE 🥝";
+    document.getElementById("tickBottom").innerText="KIWI HACK 🥝 0217";
+    document.getElementById("loadingText").innerText="SYSTEM HACKING…";
+    document.getElementById("debug-panel").style.display="block";
+  }
+  if(pw==="1441"){
+    mode="blueberry";
+    document.body.className="blueberry-mode";
+    document.getElementById("title").innerText="BLUEBERRY_ANTI-VIRUS";
+    document.getElementById("tickTop").innerText="BLUEBERRY SYSTEM 🫐";
+    document.getElementById("tickBottom").innerText="BLUEBERRY AV 🫐 0217";
+    document.getElementById("loadingText").innerText="SYSTEM RECOVERING…";
+    document.getElementById("debug-panel").style.display="block";
+  }
+}
+
+function bootSystem(){
+  document.getElementById("h-screen").style.display="flex";
+  setTimeout(setup,800);
+}
+
+function setup(){
+  document.getElementById("h-screen").style.display="none";
+  document.getElementById("menu").style.display="none";
+  const p=+document.getElementById("pCount").value;
+
+  roles=new Array(p).fill("시민");
+  roles[Math.floor(Math.random()*p)]="머더";
+  roles[(roles.indexOf("머더")+1)%p]="보안관";
+  roles[(roles.indexOf("머더")+2)%p]="의사";
+
+  const citizenSkills=[...skills.시민]; // 중복 방지
+  skillsPick=roles.map(r=>{
+    if(skills[r]){
+      if(r==="시민"){
+        return citizenSkills.splice(Math.floor(Math.random()*citizenSkills.length),1)[0];
+      }
+      return skills[r][Math.floor(Math.random()*skills[r].length)];
+    }
+  });
+
+  cur=0;
+  document.getElementById("draw").style.display="block";
+}
+
+function reveal(){
+  document.getElementById("draw").style.display="none";
+  document.getElementById("result").style.display="block";
+  document.getElementById("role").innerText=roles[cur];
+  document.getElementById("skill").innerText=skillsPick[cur].n;
+  document.getElementById("desc").innerText=skillsPick[cur].d;
+}
+
+function next(){
+  cur++;
+  if(cur>=roles.length) location.reload();
+  document.getElementById("result").style.display="none";
+  document.getElementById("draw").style.display="block";
+  document.getElementById("pNum").innerText="PLAYER "+(cur+1);
+}
+</script>
+</body>
+</html>
